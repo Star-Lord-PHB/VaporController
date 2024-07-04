@@ -130,8 +130,8 @@ extension ParameterListParsingRule {
         
         var diagnosticID: MessageID {
             switch self {
-                case .notMatch(let rule, let argumentIndex): .init(domain: "ParameterListParsingError", id: "NotMatch")
-                case .extraArguments(let index): .init(domain: "ParameterListParsingError", id: "ExtraArguments")
+                case .notMatch: .init(domain: "ParameterListParsingError", id: "NotMatch")
+                case .extraArguments: .init(domain: "ParameterListParsingError", id: "ExtraArguments")
             }
         }
         

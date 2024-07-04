@@ -21,7 +21,15 @@ public macro Controller(path: String..., middleware: any Middleware...) =
 //@attached(peer)
 //public macro RequestBody() = #externalMacro(module: "VaporControllerMacros", type: "RequestBodyMacro")
 
-// TODO: Implement a Costom Macro
+
+@attached(peer)
+public macro CustomEndPoint(method: Vapor.HTTPMethod = .GET, path: String..., middleware: any Middleware...) =
+    #externalMacro(module: "VaporControllerMacros", type: "CustomEndPointMacro")
+
+
+@attached(peer)
+public macro CustomRouteBuilder(useControllerGlobalSetting: Bool = false) =
+    #externalMacro(module: "VaporControllerMacros", type: "CustomRouteBuilderMacro")
 
 
 

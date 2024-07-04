@@ -32,13 +32,29 @@ struct HHH {
         @QueryParam(name: "pass") password: String,
         @QueryParam age: Int = 0,
         @QueryParam description: String?
-    ) -> HTTPStatus {
+    ) async -> HTTPStatus {
         return .ok
     }
     
     @EndPoint(path: "empty", "endpoint")
     func emptyEndPoint() -> HTTPStatus {
         .ok
+    }
+    
+    @CustomEndPoint(method: .OPTIONS, path: "custom", "endpoint", middleware: UserAuthenticator())
+    func customEndPoint(request req: Request) -> HTTPStatus {
+        .ok
+    }
+    
+    @CustomRouteBuilder
+    func customRouteBuilderWithoutGlobal(builder routes: RoutesBuilder) {
+        routes.on(.ACL, "builder", "without", "global", use: { _ in HTTPStatus.ok })
+    }
+    
+    
+    @CustomRouteBuilder(useControllerGlobalSetting: true)
+    func customRouteBuilderWithGlobal(_ routes: RoutesBuilder) throws {
+        routes.on(.ACL, "builder", "with", "global", use: { _ in HTTPStatus.ok })
     }
     
 }
@@ -60,8 +76,32 @@ struct HHH {
 //    @EndPoint
 //    struct WrongTarget {}
 //    
+//    @CustomEndPoint
+//    func wrongCustomEndPoint(request req: Request, name: String) -> HTTPStatus {
+//        .ok
+//    }
+//    
+//    @CustomEndPoint
+//    func wrongCustomEndPoint() -> HTTPStatus {
+//        .ok
+//    }
+//    
+//    @CustomRouteBuilder
+//    func wrongCustomRouteBuilder() {
+//        
+//    }
+//    
+//    @CustomRouteBuilder
+//    func wrongCustomRouteBuilder(builder: RoutesBuilder, name: String) {
+//        
+//    }
+//    
+//    @CustomRouteBuilder
+//    func wrongCustomRouteBuilderAsync(builder: RoutesBuilder) async {
+//        
+//    }
+//    
 //}
-
 
 struct User: Content, Authenticatable {
     let name: String

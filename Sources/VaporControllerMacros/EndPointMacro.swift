@@ -136,27 +136,39 @@ public struct EndPointMacro: MarkerMacro {
             case .pathParam(let requestParamName):
                 if let defaultValue = parameter.defaultValue {
                     "let \(varName) = req.parameters.get(\(requestParamName), as: \(type).self) ?? \(defaultValue.value)"
-                } else if parameter.type.as(OptionalTypeSyntax.self) != nil {
+                } else if parameter.type.is(OptionalTypeSyntax.self) {
                     "let \(varName) = req.parameters.get(\(requestParamName), as: \(type).self)"
                 } else {
                     "let \(varName) = try req.parameters.require(\(requestParamName), as: \(type).self)"
                 }
             case .requestBody:
-                "let \(varName) = try req.content.decode(\(type).self)"
+                if let defaultValue = parameter.defaultValue {
+                    "let \(varName) = (try? req.content.decode(\(type.self))) ?? \(defaultValue)"
+                } else if parameter.type.is(OptionalTypeSyntax.self) {
+                    "let \(varName) = try? req.content.decode(\(type.self))"
+                } else {
+                    "let \(varName) = try req.content.decode(\(type).self)"
+                }
             case .queryParam(let requestParamName):
                 if let defaultValue = parameter.defaultValue {
                     "let \(varName) = req.query[\(type).self, at: \(requestParamName)] ?? \(defaultValue.value)"
-                } else if parameter.type.as(OptionalTypeSyntax.self) != nil {
+                } else if parameter.type.is(OptionalTypeSyntax.self) {
                     "let \(varName) = req.query[\(type).self, at: \(requestParamName)]"
                 } else {
                     "let \(varName) = try req.query.get(\(type).self, at: \(requestParamName))"
                 }
             case .queryContent:
-                "let \(varName) = try req.query.decode(\(type).self)"
+                if let defaultValue = parameter.defaultValue {
+                    "let \(varName) = (try? req.query.decode(\(type).self)) ?? \(defaultValue)"
+                } else if parameter.type.is(OptionalTypeSyntax.self) {
+                    "let \(varName) = try? req.query.decode(\(type).self)"
+                } else {
+                    "let \(varName) = try req.query.decode(\(type).self)"
+                }
             case .authContent:
                 if let defaultValue = parameter.defaultValue {
                     "let \(varName) = req.auth.get(\(type).self) ?? \(defaultValue.value)"
-                } else if parameter.type.as(OptionalTypeSyntax.self) != nil {
+                } else if parameter.type.is(OptionalTypeSyntax.self) {
                     "let \(varName) = req.auth.get(\(type).self)"
                 } else {
                     "let \(varName) = try req.auth.require(\(type).self)"

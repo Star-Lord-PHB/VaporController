@@ -31,9 +31,20 @@ struct HHH {
         @QueryContent userName: String,
         @QueryParam(name: "pass") password: String,
         @QueryParam age: Int = 0,
-        @QueryParam description: String?
+        @QueryParam description: String?,
+        @AuthContent user: User = .init(name: "", age: 0)
     ) async -> HTTPStatus {
         return .ok
+    }
+    
+    @EndPoint(path: "endpoint", "login")
+    func endPoint6(@AuthContent user: User) -> HTTPStatus {
+        .ok
+    }
+    
+    @EndPoint
+    func endPoint7(@AuthContent _ user: User?, @QueryParam id: String) -> HTTPStatus {
+        .ok
     }
     
     @EndPoint(path: "empty", "endpoint")

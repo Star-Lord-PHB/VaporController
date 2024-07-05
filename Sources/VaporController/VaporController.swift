@@ -3,7 +3,6 @@
 
 import VaporControllerMacros
 import Vapor
-import SwiftUI
 
 
 @attached(peer)
@@ -66,6 +65,16 @@ public struct QueryParam<Value> {
 
 @propertyWrapper
 public struct QueryContent<Value: Content>: Content {
+    public var wrappedValue: Value
+    public init(wrappedValue: Value) {
+        self.wrappedValue = wrappedValue
+    }
+}
+
+
+
+@propertyWrapper
+public struct AuthContent<Value> {
     public var wrappedValue: Value
     public init(wrappedValue: Value) {
         self.wrappedValue = wrappedValue

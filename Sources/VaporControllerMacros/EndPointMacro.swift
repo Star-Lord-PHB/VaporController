@@ -153,6 +153,14 @@ public struct EndPointMacro: MarkerMacro {
                 }
             case .queryContent:
                 "let \(varName) = try req.query.decode(\(type).self)"
+            case .authContent:
+                if let defaultValue = parameter.defaultValue {
+                    "let \(varName) = req.auth.get(\(type).self) ?? \(defaultValue.value)"
+                } else if parameter.type.as(OptionalTypeSyntax.self) != nil {
+                    "let \(varName) = req.auth.get(\(type).self)"
+                } else {
+                    "let \(varName) = try req.auth.require(\(type).self)"
+                }
         }
         
     }
@@ -184,9 +192,10 @@ extension EndPointMacro {
         case requestBody
         case queryParam(name: ExprSyntax)
         case queryContent
+        case authContent
         
         private static let allCasesStr: Set<String> = [
-            "PathParam", "RequestBody", "QueryParam", "QueryContent"
+            "PathParam", "RequestBody", "QueryParam", "QueryContent", "AuthContent"
         ]
         
         init(from parameter: FunctionParameterSyntax) throws(ParseError) {
@@ -212,6 +221,7 @@ extension EndPointMacro {
                 case "RequestBody": .requestBody
                 case "QueryParam": .queryParam(name: name)
                 case "QueryContent": .queryContent
+                case "AuthContent": .authContent
                 default: .pathParam(name: defaultName)
             }
             

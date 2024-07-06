@@ -324,3 +324,30 @@ public struct AuthContent<Value> {
         self.wrappedValue = wrappedValue
     }
 }
+
+
+/// A property wrapper denoting a parameter of a request handler function to get its value
+/// from request using the provided `keyPath`
+///
+/// This is used to get values from request that are not directly support by other
+/// parameter markers, such as the `db` property provided by the Fluent framework
+///
+/// ```swift
+/// @EndPoint
+/// func endPoint1(@RequestKeyPath(\.db) db: any Database) -> HTTPStatus { ... }
+/// ```
+///
+/// The request handler signature above will leads to the following codes:
+///
+/// ```swift
+/// let db = req[keyPath: \.db]
+/// ```
+///
+/// If you want to get the whole Request instance, pass in `\.self`
+@propertyWrapper
+public struct RequestKeyPath<Value> {
+    public var wrappedValue: Value
+    public init(wrappedValue: Value, _ keyPath: KeyPath<Request, Value>) {
+        self.wrappedValue = wrappedValue
+    }
+}

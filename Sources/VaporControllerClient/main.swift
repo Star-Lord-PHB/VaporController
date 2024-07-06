@@ -32,7 +32,8 @@ struct HHH {
         @QueryParam(name: "pass") password: String,
         @QueryParam age: Int = 0,
         @QueryParam description: String?,
-        @AuthContent user: User = .init(name: "", age: 0)
+        @AuthContent user: User = .init(name: "", age: 0),
+        @RequestKeyPath(\.logger) logger: Logger
     ) async -> HTTPStatus {
         return .ok
     }

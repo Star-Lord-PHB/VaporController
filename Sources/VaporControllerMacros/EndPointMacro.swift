@@ -173,6 +173,8 @@ public struct EndPointMacro: MarkerMacro {
                 } else {
                     "let \(varName) = try req.auth.require(\(type).self)"
                 }
+            case .requestKeyPath(let keyPath):
+                "let \(varName) = req[keyPath: \(keyPath)]"
         }
         
     }
@@ -205,9 +207,10 @@ extension EndPointMacro {
         case queryParam(name: ExprSyntax)
         case queryContent
         case authContent
+        case requestKeyPath(keyPath: ExprSyntax)
         
         private static let allCasesStr: Set<String> = [
-            "PathParam", "RequestBody", "QueryParam", "QueryContent", "AuthContent"
+            "PathParam", "RequestBody", "QueryParam", "QueryContent", "AuthContent", "RequestKeyPath"
         ]
         
         init(from parameter: FunctionParameterSyntax) throws(ParseError) {
@@ -224,9 +227,14 @@ extension EndPointMacro {
             
             let attr = attrs?.first
             var defaultName: ExprSyntax {
-                ExprSyntax(StringLiteralExprSyntax(content: (parameter.secondName ?? parameter.firstName).text))
+                .init(StringLiteralExprSyntax(content: (parameter.secondName ?? parameter.firstName).text))
             }
             var name: ExprSyntax { attr?.arguments?.grouped()["name"]?.first?.expression ?? defaultName }
+            
+            var defaultKeyPath: ExprSyntax {
+                .init(KeyPathExprSyntax(components: [.init(component: .init(.init(declName: .init(baseName: "self"))))]))
+            }
+            var keyPath: ExprSyntax { attr?.arguments?.grouped()[nil]?.first?.expression ?? defaultKeyPath }
             
             self = switch attr?.attributeName.trimmedDescription {
                 case "PathParam": .pathParam(name: name)
@@ -234,6 +242,7 @@ extension EndPointMacro {
                 case "QueryParam": .queryParam(name: name)
                 case "QueryContent": .queryContent
                 case "AuthContent": .authContent
+                case "RequestKeyPath": .requestKeyPath(keyPath: keyPath)
                 default: .pathParam(name: defaultName)
             }
             

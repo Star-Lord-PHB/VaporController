@@ -95,6 +95,7 @@ The parameters for the handler functions may come from different places in `Requ
 * `QueryParam`: denote that the parameter will be retrieved from the `query` property of `Request` using `get` or subscript 
 * `QueryContent`: denote that the parameter will be retrieved from the `query` property of `Request` using `decode` method 
 * `AuthContent`: denote that the parameter will be retrieved from the `auth` property of `Request` 
+* `RequestKeyPath`: denote that the parameter will be retrieved from the `Request` using the provided key path 
 
 ### Optional Parameter & Default Value
 

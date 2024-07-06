@@ -56,7 +56,8 @@ public struct EndPointMacro: MarkerMacro {
         let returnArrow = signature.returnClause?.arrow.trimmed ?? ""
         let returnType = signature.returnClause?.type.trimmed ?? ""
         let asyncKeyword = signature.effectSpecifiers?.asyncSpecifier?.trimmed ?? ""
-        let awaitKeyword = (signature.effectSpecifiers?.asyncSpecifier != nil ? "await" : "") as TokenSyntax
+        let awaitKeyword = (signature.effectSpecifiers?.asyncSpecifier != nil ? "await " : "") as TokenSyntax
+        let tryKeyword = (signature.effectSpecifiers?.throwsClause != nil ? "try " : "") as TokenSyntax
         
         let method = macroParameters[0].first?.expression ?? ExprSyntax(MemberAccessExprSyntax(name: "GET"))
         
@@ -83,7 +84,7 @@ public struct EndPointMacro: MarkerMacro {
             """
             func \(handlerName)(req: Request) \(asyncKeyword) throws \(returnArrow) \(returnType) {
                 \(raw: extractParametersOperations.joined(separator: "\n"))
-                return \(awaitKeyword) \(declaration.name.trimmed)(\(raw: passArgumentsOperations.joined(separator: ",")))
+                return \(tryKeyword)\(awaitKeyword)\(declaration.name.trimmed)(\(raw: passArgumentsOperations.joined(separator: ",")))
             }
             """
         ]

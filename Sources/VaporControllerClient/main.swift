@@ -17,7 +17,7 @@ struct HHH {
     }
     
     @EndPoint(method: getMethod(), middleware: UserAuthenticator(), User.guardMiddleware())
-    func endPoint3(@RequestBody user: User) -> HTTPStatus {
+    func endPoint3(@RequestBody user: User) throws -> HTTPStatus {
         return .ok
     }
     
@@ -34,7 +34,7 @@ struct HHH {
         @QueryParam description: String?,
         @AuthContent user: User = .init(name: "", age: 0),
         @RequestKeyPath(\.logger) logger: Logger
-    ) async -> HTTPStatus {
+    ) async throws -> HTTPStatus {
         return .ok
     }
     

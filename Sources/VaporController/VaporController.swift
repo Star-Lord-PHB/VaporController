@@ -330,6 +330,41 @@ public struct AuthContent<Value> {
 /// from request using the provided `keyPath`
 ///
 /// This is used to get values from request that are not directly support by other
+/// parameter markers, such as the `db` property provided by the Fluent framework.
+///
+/// The default key path is `\.self`
+///
+/// ```swift
+/// @EndPoint
+/// func endPoint1(@Req(\.db) db: any Database) -> HTTPStatus { ... }
+///
+/// @EndPoint
+/// func endPoint2(@Req req: Request) -> HTTPStatus { ... }
+/// ```
+///
+/// The request handler signature above will leads to the following codes:
+///
+/// ```swift
+/// // endPoint1
+/// let db = req[keyPath: \.db]
+/// // endPoint2
+/// let req = req[keyPath: \.self]
+/// ```
+///
+/// If you want to get the whole Request instance, pass in `\.self` or nothing
+@propertyWrapper
+public struct Req<Value> {
+    public var wrappedValue: Value
+    public init(wrappedValue: Value, _ keyPath: KeyPath<Request, Value> = \.self) {
+        self.wrappedValue = wrappedValue
+    }
+}
+
+
+/// A property wrapper denoting a parameter of a request handler function to get its value
+/// from request using the provided `keyPath`
+///
+/// This is used to get values from request that are not directly support by other
 /// parameter markers, such as the `db` property provided by the Fluent framework
 ///
 /// ```swift
@@ -344,6 +379,7 @@ public struct AuthContent<Value> {
 /// ```
 ///
 /// If you want to get the whole Request instance, pass in `\.self`
+@available(*, deprecated, renamed: "Req", message: "use @Req instead")
 @propertyWrapper
 public struct RequestKeyPath<Value> {
     public var wrappedValue: Value

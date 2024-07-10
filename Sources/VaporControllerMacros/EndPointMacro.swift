@@ -82,6 +82,7 @@ public struct EndPointMacro: MarkerMacro {
         
         let handlerDeclaration: [SwiftSyntax.DeclSyntax] = [
             """
+            @Sendable
             func \(handlerName)(req: Request) \(asyncKeyword) throws \(returnArrow) \(returnType) {
                 \(raw: extractParametersOperations.joined(separator: "\n"))
                 return \(tryKeyword)\(awaitKeyword)\(declaration.name.trimmed)(\(raw: passArgumentsOperations.joined(separator: ",")))
@@ -174,7 +175,7 @@ public struct EndPointMacro: MarkerMacro {
                 } else {
                     "let \(varName) = try req.auth.require(\(type).self)"
                 }
-            case .requestKeyPath(let keyPath):
+            case .requestKeyPath(let keyPath), .req(let keyPath):
                 "let \(varName) = req[keyPath: \(keyPath)]"
         }
         
@@ -209,9 +210,10 @@ extension EndPointMacro {
         case queryContent
         case authContent
         case requestKeyPath(keyPath: ExprSyntax)
+        case req(keyPath: ExprSyntax)
         
         private static let allCasesStr: Set<String> = [
-            "PathParam", "RequestBody", "QueryParam", "QueryContent", "AuthContent", "RequestKeyPath"
+            "PathParam", "RequestBody", "QueryParam", "QueryContent", "AuthContent", "RequestKeyPath", "Req"
         ]
         
         init(from parameter: FunctionParameterSyntax) throws(ParseError) {
@@ -233,7 +235,7 @@ extension EndPointMacro {
             var name: ExprSyntax { attr?.arguments?.grouped()["name"]?.first?.expression ?? defaultName }
             
             var defaultKeyPath: ExprSyntax {
-                .init(KeyPathExprSyntax(components: [.init(component: .init(.init(declName: .init(baseName: "self"))))]))
+                .init(KeyPathExprSyntax(components: [.init(period: ".", component: .init(.init(declName: .init(baseName: "self"))))]))
             }
             var keyPath: ExprSyntax { attr?.arguments?.grouped()[nil]?.first?.expression ?? defaultKeyPath }
             
@@ -244,6 +246,7 @@ extension EndPointMacro {
                 case "QueryContent": .queryContent
                 case "AuthContent": .authContent
                 case "RequestKeyPath": .requestKeyPath(keyPath: keyPath)
+                case "Req": .req(keyPath: keyPath)
                 default: .pathParam(name: defaultName)
             }
             

@@ -50,7 +50,8 @@ let package = Package(
             name: "VaporControllerClient",
             dependencies: [
                 "VaporController", .product(name: "Vapor", package: "vapor"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
 
         // A test target used to develop the macro implementation.

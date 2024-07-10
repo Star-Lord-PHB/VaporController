@@ -33,7 +33,8 @@ struct HHH {
         @QueryParam age: Int = 0,
         @QueryParam description: String?,
         @AuthContent user: User = .init(name: "", age: 0),
-        @RequestKeyPath(\.logger) logger: Logger
+        @RequestKeyPath(\.logger) logger: Logger,
+        @Req req: Request
     ) async throws -> HTTPStatus {
         return .ok
     }
@@ -53,6 +54,8 @@ struct HHH {
         .ok
     }
     
+    // TODO: find a way to allow removing this @Sendable
+    @Sendable
     @CustomEndPoint(method: .OPTIONS, path: "custom", "endpoint", middleware: UserAuthenticator())
     func customEndPoint(request req: Request) -> HTTPStatus {
         .ok

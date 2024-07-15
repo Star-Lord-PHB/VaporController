@@ -26,7 +26,7 @@ struct HHH {
         return .ok
     }
     
-    @EndPoint(path: "endpoints", "hello", ":name")
+    @EndPoint(path: "endpoints", "hello", ":name", body: .stream)
     func endPoint5(
         @QueryContent userName: String,
         @QueryParam(name: "pass") password: String,
@@ -44,7 +44,7 @@ struct HHH {
         .ok
     }
     
-    @EndPoint
+    @EndPoint(body: .collect(maxSize: 128))
     func endPoint7(@AuthContent _ user: User?, @QueryParam id: String) -> HTTPStatus {
         .ok
     }
@@ -56,7 +56,7 @@ struct HHH {
     
     // TODO: find a way to allow removing this @Sendable
     @Sendable
-    @CustomEndPoint(method: .OPTIONS, path: "custom", "endpoint", middleware: UserAuthenticator())
+    @CustomEndPoint(method: .OPTIONS, path: "custom", "endpoint", middleware: UserAuthenticator(), body: .collect)
     func customEndPoint(request req: Request) -> HTTPStatus {
         .ok
     }

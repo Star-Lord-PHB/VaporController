@@ -19,7 +19,8 @@ public struct EndPointMacro: EndPointMacroProtocal {
     static let macroParameterParseRules: [ParameterListParsingRule] = [
         .labeled("method", canIgnore: true),
         .labeledVarArg("path", canIgnore: true),
-        .labeledVarArg("middleware", canIgnore: true)
+        .labeledVarArg("middleware", canIgnore: true),
+        .labeled("body", canIgnore: true),
     ]
     
     
@@ -39,7 +40,9 @@ public struct EndPointMacro: EndPointMacroProtocal {
         
         let middleware = parameters[2].map { $0.expression }
         
-        return .init(method: method, path: path, middleware: middleware)
+        let body = parameters[3].first?.expression ?? ExprSyntax(MemberAccessExprSyntax(name: "collect"))
+        
+        return .init(method: method, path: path, middleware: middleware, body: body)
         
     }
     

@@ -20,13 +20,14 @@ struct EndPointSpec {
     let method: ExprSyntax
     let path: [ExprSyntax]
     let middleware: [ExprSyntax]
+    let body: ExprSyntax
     
     func useHandlerStr(routeVarName: String) -> String {
         let pathComponentStrs = path.map({ $0.trimmedDescription })
         let middlewareStrs = middleware.map({ $0.trimmedDescription })
         let groupMiddlewareStr = middlewareStrs.isEmpty ? "" : ".grouped(\(middlewareStrs.joined(separator: ",")))\n\t"
         return "\(routeVarName)\(groupMiddlewareStr)"
-            + ".on(\(method), \(pathComponentStrs.joined(separator: ",")), use: self.\(name)(req:))"
+            + ".on(\(method), \(pathComponentStrs.joined(separator: ",")), body: \(body), use: self.\(name)(req:))"
     }
     
 }
@@ -36,6 +37,7 @@ struct MacroParam {
     let method: ExprSyntax
     let path: [ExprSyntax]
     let middleware: [ExprSyntax]
+    let body: ExprSyntax
 }
 
 

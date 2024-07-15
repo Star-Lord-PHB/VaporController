@@ -13,6 +13,7 @@ import Vapor
 /// Denote an EndPoint (request handler) that use `GET` as method
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// It is basically using ``EndPoint(method:path:middleware:)`` with `method` set to `.GET`
 ///
@@ -26,13 +27,14 @@ import Vapor
 /// attached with ``Controller(path:middleware:)`` macro. And the actual expansion is done by
 /// ``Controller(path:middleware:)``, thus expanding this macro will show nothing
 @attached(peer)
-public macro GET(path: String..., middleware: any Middleware...) = 
+public macro GET(path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "EndPointMacro.GETMacro")
 
 
 /// Denote an EndPoint (request handler) that use `POST` as method
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// It is basically using ``EndPoint(method:path:middleware:)`` with `method` set to `.POST`
 ///
@@ -46,13 +48,14 @@ public macro GET(path: String..., middleware: any Middleware...) =
 /// attached with ``Controller(path:middleware:)`` macro. And the actual expansion is done by
 /// ``Controller(path:middleware:)``, thus expanding this macro will show nothing
 @attached(peer)
-public macro POST(path: String..., middleware: any Middleware...) =
+public macro POST(path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "EndPointMacro.POSTMacro")
 
 
 /// Denote an EndPoint (request handler) that use `PUT` as method
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// It is basically using ``EndPoint(method:path:middleware:)`` with `method` set to `.PUT`
 ///
@@ -66,13 +69,14 @@ public macro POST(path: String..., middleware: any Middleware...) =
 /// attached with ``Controller(path:middleware:)`` macro. And the actual expansion is done by
 /// ``Controller(path:middleware:)``, thus expanding this macro will show nothing
 @attached(peer)
-public macro PUT(path: String..., middleware: any Middleware...) =
+public macro PUT(path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "EndPointMacro.PUTMacro")
 
 
 /// Denote an EndPoint (request handler) that use `DELETE` as method
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// It is basically using ``EndPoint(method:path:middleware:)`` with `method` set to `.DELETE`
 ///
@@ -86,13 +90,14 @@ public macro PUT(path: String..., middleware: any Middleware...) =
 /// attached with ``Controller(path:middleware:)`` macro. And the actual expansion is done by
 /// ``Controller(path:middleware:)``, thus expanding this macro will show nothing
 @attached(peer)
-public macro DELETE(path: String..., middleware: any Middleware...) =
+public macro DELETE(path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "EndPointMacro.DELETEMacro")
 
 
 /// Denote an EndPoint (request handler) that use `MOVE` as method
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// It is basically using ``EndPoint(method:path:middleware:)`` with `method` set to `.MOVE`
 ///
@@ -106,13 +111,14 @@ public macro DELETE(path: String..., middleware: any Middleware...) =
 /// attached with ``Controller(path:middleware:)`` macro. And the actual expansion is done by
 /// ``Controller(path:middleware:)``, thus expanding this macro will show nothing
 @attached(peer)
-public macro MOVE(path: String..., middleware: any Middleware...) =
+public macro MOVE(path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "EndPointMacro.MOVEMacro")
 
 
 /// Denote an EndPoint (request handler) that use `COPY` as method
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// It is basically using ``EndPoint(method:path:middleware:)`` with `method` set to `.COPY`
 ///
@@ -126,13 +132,14 @@ public macro MOVE(path: String..., middleware: any Middleware...) =
 /// attached with ``Controller(path:middleware:)`` macro. And the actual expansion is done by
 /// ``Controller(path:middleware:)``, thus expanding this macro will show nothing
 @attached(peer)
-public macro COPY(path: String..., middleware: any Middleware...) =
+public macro COPY(path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "EndPointMacro.COPYMacro")
 
 
 /// Denote an EndPoint (request handler) that use `PATCH` as method
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// It is basically using ``EndPoint(method:path:middleware:)`` with `method` set to `.PATCH`
 ///
@@ -146,13 +153,14 @@ public macro COPY(path: String..., middleware: any Middleware...) =
 /// attached with ``Controller(path:middleware:)`` macro. And the actual expansion is done by
 /// ``Controller(path:middleware:)``, thus expanding this macro will show nothing
 @attached(peer)
-public macro PATCH(path: String..., middleware: any Middleware...) =
+public macro PATCH(path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "EndPointMacro.PATCHMacro")
 
 
 /// Denote an EndPoint (request handler) that use `HEAD` as method
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// It is basically using ``EndPoint(method:path:middleware:)`` with `method` set to `.HEAD`
 ///
@@ -166,13 +174,14 @@ public macro PATCH(path: String..., middleware: any Middleware...) =
 /// attached with ``Controller(path:middleware:)`` macro. And the actual expansion is done by
 /// ``Controller(path:middleware:)``, thus expanding this macro will show nothing
 @attached(peer)
-public macro HEAD(path: String..., middleware: any Middleware...) =
+public macro HEAD(path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "EndPointMacro.HEADMacro")
 
 
 /// Denote an EndPoint (request handler) that use `OPTIONS` as method
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// It is basically using ``EndPoint(method:path:middleware:)`` with `method` set to `.OPTIONS`
 ///
@@ -186,5 +195,5 @@ public macro HEAD(path: String..., middleware: any Middleware...) =
 /// attached with ``Controller(path:middleware:)`` macro. And the actual expansion is done by
 /// ``Controller(path:middleware:)``, thus expanding this macro will show nothing
 @attached(peer)
-public macro OPTIONS(path: String..., middleware: any Middleware...) =
+public macro OPTIONS(path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "EndPointMacro.OPTIONSMacro")

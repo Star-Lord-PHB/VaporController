@@ -22,6 +22,7 @@ public struct CustomEndPointMacro: MarkerMacro {
         let method: ExprSyntax
         let path: [ExprSyntax]
         let middleware: [ExprSyntax]
+        let body: ExprSyntax
         let parameterLabel: TokenSyntax
         
         func useHandlerStr(routeVarName: String) -> String {
@@ -30,7 +31,7 @@ public struct CustomEndPointMacro: MarkerMacro {
             let groupMiddlewareStr = middlewareStrs.isEmpty ? "" : ".grouped(\(middlewareStrs.joined(separator: ",")))\n\t"
             let label = parameterLabel
             return "\(routeVarName)\(groupMiddlewareStr)"
-            + ".on(\(method), \(pathComponentStrs.joined(separator: ",")), use: self.\(name)(\(label):))"
+            + ".on(\(method), \(pathComponentStrs.joined(separator: ",")), body: \(body), use: self.\(name)(\(label):))"
         }
         
     }
@@ -39,7 +40,8 @@ public struct CustomEndPointMacro: MarkerMacro {
     static let macroParameterParseRules: [ParameterListParsingRule] = [
         .labeled("method", canIgnore: true),
         .labeledVarArg("path", canIgnore: true),
-        .labeledVarArg("middleware", canIgnore: true)
+        .labeledVarArg("middleware", canIgnore: true),
+        .labeled("body", canIgnore: true)
     ]
     
     
@@ -74,6 +76,8 @@ public struct CustomEndPointMacro: MarkerMacro {
         
         let middleware = macroParameters[2].map { $0.expression }
         
+        let body = macroParameters[3].first?.expression ?? ExprSyntax(MemberAccessExprSyntax(name: "collect"))
+        
         let parameterList = signature.parameterClause.parameters
         
         guard parameterList.count == 1, let parameter = parameterList.first else {
@@ -87,6 +91,7 @@ public struct CustomEndPointMacro: MarkerMacro {
             method: method,
             path: path,
             middleware: middleware,
+            body: body,
             parameterLabel: parameter.firstName.trimmed
         )
         

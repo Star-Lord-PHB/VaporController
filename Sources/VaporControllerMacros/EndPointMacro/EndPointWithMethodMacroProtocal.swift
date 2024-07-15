@@ -23,7 +23,8 @@ extension EndPointWithMethodMacroProtocal {
     static var macroParameterParseRules: [ParameterListParsingRule] {
         [
             .labeledVarArg("path", canIgnore: true),
-            .labeledVarArg("middleware", canIgnore: true)
+            .labeledVarArg("middleware", canIgnore: true),
+            .labeled("body", canIgnore: true),
         ]
     }
     
@@ -42,7 +43,9 @@ extension EndPointWithMethodMacroProtocal {
         
         let middleware = parameters[1].map { $0.expression }
         
-        return .init(method: method, path: path, middleware: middleware)
+        let body = parameters[2].first?.expression ?? ExprSyntax(MemberAccessExprSyntax(name: "collect"))
+        
+        return .init(method: method, path: path, middleware: middleware, body: body)
         
     }
     

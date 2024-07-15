@@ -65,7 +65,8 @@ extension EndPointMacroProtocal {
             name: handlerName,
             method: param.method,
             path: param.path,
-            middleware: param.middleware
+            middleware: param.middleware,
+            body: param.body
         )
         
     }

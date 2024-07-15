@@ -9,6 +9,7 @@ import Vapor
 /// - Parameter method: the HTTP method for this handler
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// This macro will scan through the parameters of the function attached to generate another
 /// function that will correctly extract the required values from `Request` and call this handler
@@ -25,7 +26,7 @@ import Vapor
 ///     ) -> String {
 ///         return "Hello \(firstName) \(middleName) \(lastName ?? "")"
 ///     }
-///     @EndPoint(method: .POST, path: "books", "add", middleware: User.authenticator())
+///     @EndPoint(method: .POST, path: "books", "add", middleware: User.authenticator(), body: .stream)
 ///     func endPoint2(
 ///         @RequestBody book: Book,
 ///         @AuthContent user: User
@@ -43,10 +44,12 @@ import Vapor
 ///     func boot(routes: RoutesBuilder) throws {
 ///         routes.on(
 ///             .GET, "hello", ":firstName", ":middleName", ":lastName",
+///             body: .collect,
 ///             use: randPrefix_endPoint1_randSuffix(req:)
 ///         )
 ///         routes.grouped(User.authenticator()).on(
 ///             .POST, "books", "add",
+///             body: .stream,
 ///             use: randPrefix_endPoint2_randSuffix(req:)
 ///         )
 ///     }
@@ -68,7 +71,7 @@ import Vapor
 /// attached with ``Controller(path:middleware:)`` macro. And the actual expansion is done by
 /// ``Controller(path:middleware:)``, thus expanding this macro will show nothing
 @attached(peer)
-public macro EndPoint(method: Vapor.HTTPMethod = .GET, path: String..., middleware: any Middleware...) =
+public macro EndPoint(method: Vapor.HTTPMethod = .GET, path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "EndPointMacro")
 
 
@@ -94,6 +97,7 @@ public macro Controller(path: String..., middleware: any Middleware...) =
 /// - Parameter method: the HTTP method for this handler
 /// - Parameter path: the path components of this handler
 /// - Parameter middleware: the middleware used for this handler
+/// - Parameter body: the body streaming strategy
 ///
 /// It is similar to ``EndPoint(method:path:middleware:)`` macro, but it requires that the
 /// attached handler function to take one and only one parameter of type `Vapor.Request`
@@ -103,7 +107,7 @@ public macro Controller(path: String..., middleware: any Middleware...) =
 ///
 /// - Seealso: ``EndPoint(method:path:middleware:)``
 @attached(peer)
-public macro CustomEndPoint(method: Vapor.HTTPMethod = .GET, path: String..., middleware: any Middleware...) =
+public macro CustomEndPoint(method: Vapor.HTTPMethod = .GET, path: String..., middleware: any Middleware..., body: HTTPBodyStreamStrategy = .collect) =
     #externalMacro(module: "VaporControllerMacros", type: "CustomEndPointMacro")
 
 

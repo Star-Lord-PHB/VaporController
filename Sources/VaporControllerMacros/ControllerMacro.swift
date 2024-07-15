@@ -27,73 +27,37 @@ public struct ControllerMacro: ExtensionMacro {
         in context: some SwiftSyntaxMacros.MacroExpansionContext
     ) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
         
-        typealias MemberFunctionSpec = (funcDecl: FunctionDeclSyntax, attributeNode: AttributeSyntax)
-        
-        let macroParameterList: [[LabeledExprSyntax]]
-        do {
-            macroParameterList = try node.arguments?
-                .grouped(with: macroParameterParseRules) ?? .init(repeating: [], count: macroParameterParseRules.count)
-        } catch {
-            context.diagnose(.init(node: node, message: error))
-            return []
-        }
-        
-        let memberFunctions = declaration.memberBlock.members
-            .compactMap { $0.decl.as(FunctionDeclSyntax.self) }
-            .reduce(into: [String:[MemberFunctionSpec]]()) { group, decl in
-                decl.attributes.first(withName: "EndPoint")
-                    .map { group["EndPoint", default: []].append((decl, $0)) }
-                decl.attributes.first(withName: "CustomEndPoint")
-                    .map { group["CustomEndPoint", default: []].append((decl, $0)) }
-                decl.attributes.first(withName: "CustomRouteBuilder")
-                    .map { group["CustomRouteBuilder", default: []].append((decl, $0)) }
-            }
+        guard
+            let macroParameterList = parseMacroParameterList(macro: node, in: context)
+        else { return [] }
         
         let globalPath = macroParameterList[0].map { $0.expression }
         let globalMiddleware = macroParameterList[1].map { $0.expression }
         let hasGlobalSetting = !globalPath.isEmpty || !globalMiddleware.isEmpty
         
-        let handlers = try memberFunctions["EndPoint", default: []].compactMap { function, attributeNode in
-            try EndPointMacro.internalExpansion(of: attributeNode, providingPeersOf: function, in: context)
-        }
+        let memberFunctions = declaration.memberBlock.members
+            .compactMap { $0.decl.as(FunctionDeclSyntax.self) }
         
-        let customHandlers = try memberFunctions["CustomEndPoint", default: []].compactMap { function, attributeNode in
-            try CustomEndPointMacro.internalExpansion(of: attributeNode, providingPeersOf: function, in: context)
-        }
-        
-        let customRouteBuilders = try memberFunctions["CustomRouteBuilder", default: []].compactMap { function, attributeNode in
-            try CustomRouteBuilderMacro.internalExpansion(of: attributeNode, providingPeersOf: function, in: context)
-        }
+        let handlers = try expandAllEndPointHandlers(from: memberFunctions, in: context)
+        let customHandlers = try expandAllCustomEndPoints(from: memberFunctions, in: context)
+        let customRouteBuilders = try expandAllCustomRouteBuilders(from: memberFunctions, in: context)
         
         let originalRouteVarName = "routes"
         let routeWithGlobalSettingVarName = hasGlobalSetting ? "routeWithGlobalSetting" : "routes"
         
         let useHandlerStrs = handlers.map { handler in
-            let pathComponentStrs = handler.path.map({ $0.trimmedDescription })
-            let middlewareStrs = handler.middleware.map({ $0.trimmedDescription })
-            let groupMiddlewareStr = middlewareStrs.isEmpty ? "" : ".grouped(\(middlewareStrs.joined(separator: ",")))\n\t"
-            return "\(routeWithGlobalSettingVarName)\(groupMiddlewareStr)"
-            + ".on(\(handler.method), \(pathComponentStrs.joined(separator: ",")), use: self.\(handler.name)(req:))"
+            handler.useHandlerStr(routeVarName: routeWithGlobalSettingVarName)
         }
         
         let useCustomHandlerStrs = customHandlers.map { handler in
-            let pathComponentStrs = handler.path.map({ $0.trimmedDescription })
-            let middlewareStrs = handler.middleware.map({ $0.trimmedDescription })
-            let groupMiddlewareStr = middlewareStrs.isEmpty ? "" : ".grouped(\(middlewareStrs.joined(separator: ",")))\n\t"
-            let label = handler.parameterLabel
-            return "\(routeWithGlobalSettingVarName)\(groupMiddlewareStr)"
-            + ".on(\(handler.method), \(pathComponentStrs.joined(separator: ",")), use: self.\(handler.name)(\(label):))"
+            handler.useHandlerStr(routeVarName: routeWithGlobalSettingVarName)
         }
         
         let useCustomRouteBuilderStrs = customRouteBuilders.map { builder in
-            let label = builder.parameterLabel.text == "_" ? "" : "\(builder.parameterLabel): "
-            let tryKeyword = builder.willThrows ? "try " : ""
-            return if let confirmedUseGlobalSetting = builder.confirmedUseGlobalSetting {
-                "\(tryKeyword)self.\(builder.name)(\(label)\(confirmedUseGlobalSetting ? routeWithGlobalSettingVarName : originalRouteVarName))"
-            } else {
-                "\(tryKeyword)self.\(builder.name)(\(label)\(builder.useGlobalSetting))"
-            }
-            
+            builder.useHandlerStr(
+                routeWithGlobalSettingVarName: routeWithGlobalSettingVarName,
+                routeWithoutGlobalSettingVarName: originalRouteVarName
+            )
         }
         
         let globalPathStr = globalPath.isEmpty ? "" : ".grouped(\(globalPath.map({ $0.trimmedDescription }).joined(separator: ",")))"
@@ -118,6 +82,76 @@ public struct ControllerMacro: ExtensionMacro {
         
         return [extensionSyntax]
         
+    }
+    
+    
+    private static func parseMacroParameterList(
+        macro: AttributeSyntax,
+        in context: MacroExpansionContext
+    ) -> [[LabeledExprSyntax]]? {
+        let macroParameterList: [[LabeledExprSyntax]]
+        do {
+            macroParameterList = try macro.arguments?
+                .grouped(with: macroParameterParseRules) ?? .init(repeating: [], count: macroParameterParseRules.count)
+        } catch {
+            context.diagnose(.init(node: macro, message: error))
+            return nil
+        }
+        return macroParameterList
+    }
+    
+    
+    private static func expandAllEndPointHandlers(
+        from functions: [FunctionDeclSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [EndPointSpec] {
+        
+        try functions.flatMap { decl in
+            
+            try decl.attributes.compactMap { $0.as(AttributeSyntax.self) }.compactMap { attribute in
+                
+                switch attribute.attributeName.as(IdentifierTypeSyntax.self)?.name.trimmed.text {
+                    case "EndPoint": try EndPointMacro.internalExpansion(of: attribute, providingPeersOf: decl, in: context)
+                    case "GET": try EndPointMacro.GETMacro.internalExpansion(of: attribute, providingPeersOf: decl, in: context)
+                    case "POST": try EndPointMacro.POSTMacro.internalExpansion(of: attribute, providingPeersOf: decl, in: context)
+                    case "PUT": try EndPointMacro.PUTMacro.internalExpansion(of: attribute, providingPeersOf: decl, in: context)
+                    case "DELETE": try EndPointMacro.DELETEMacro.internalExpansion(of: attribute, providingPeersOf: decl, in: context)
+                    case "HEAD": try EndPointMacro.HEADMacro.internalExpansion(of: attribute, providingPeersOf: decl, in: context)
+                    case "PATCH": try EndPointMacro.PATCHMacro.internalExpansion(of: attribute, providingPeersOf: decl, in: context)
+                    case "MOVE": try EndPointMacro.MOVEMacro.internalExpansion(of: attribute, providingPeersOf: decl, in: context)
+                    case "COPY": try EndPointMacro.COPYMacro.internalExpansion(of: attribute, providingPeersOf: decl, in: context)
+                    case "OPTIONS": try EndPointMacro.OPTIONSMacro.internalExpansion(of: attribute, providingPeersOf: decl, in: context)
+                    default: nil
+                }
+                
+            }
+            
+        }
+        
+    }
+    
+    
+    private static func expandAllCustomEndPoints(
+        from functions: [FunctionDeclSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [CustomEndPointMacro.CustomEndPointSpec] {
+        try functions.flatMap { decl in
+            try decl.attributes
+                .filter(byName: "CustomEndPoint")
+                .compactMap { try CustomEndPointMacro.internalExpansion(of: $0, providingPeersOf: decl, in: context) }
+        }
+    }
+    
+    
+    private static func expandAllCustomRouteBuilders(
+        from functions: [FunctionDeclSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [CustomRouteBuilderMacro.CustomRouteBuilderSpec] {
+        try functions.flatMap { decl in
+            try decl.attributes
+                .filter(byName: "CustomRouteBuilder")
+                .compactMap { try CustomRouteBuilderMacro.internalExpansion(of: $0, providingPeersOf: decl, in: context) }
+        }
     }
     
 }

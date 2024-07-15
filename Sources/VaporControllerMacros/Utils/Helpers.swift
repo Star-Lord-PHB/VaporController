@@ -20,6 +20,20 @@ extension AttributeListSyntax {
             $0.as(AttributeSyntax.self)?.attributeName.as(IdentifierTypeSyntax.self)?.name.text == name
         }?.as(AttributeSyntax.self)
     }
+    
+    
+    func filter(byName predicate: (String) -> Bool) -> [AttributeSyntax] {
+        self.compactMap {
+            $0.as(AttributeSyntax.self)
+        }.filter {
+            predicate($0.attributeName.as(IdentifierTypeSyntax.self)?.name.text ?? $0.attributeName.trimmedDescription)
+        }
+    }
+    
+    
+    func filter(byName name: String) -> [AttributeSyntax] {
+        self.filter(byName: { $0 == name })
+    }
 
 
     func grouped() -> [String:[AttributeSyntax]] {

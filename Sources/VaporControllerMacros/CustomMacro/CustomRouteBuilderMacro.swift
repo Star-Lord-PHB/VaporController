@@ -16,10 +16,12 @@ import Foundation
 public struct CustomRouteBuilderMacro: MarkerMacro {
     
     struct CustomRouteBuilderSpec {
+        
         let name: TokenSyntax
         let parameterLabel: TokenSyntax
         let useGlobalSetting: ExprSyntax
         let willThrows: Bool
+        
         var confirmedUseGlobalSetting: Bool? {
             if let text = useGlobalSetting.as(BooleanLiteralExprSyntax.self)?.literal.trimmed.text {
                 text == "true"
@@ -27,6 +29,20 @@ public struct CustomRouteBuilderMacro: MarkerMacro {
                 nil
             }
         }
+        
+        func useHandlerStr(
+            routeWithGlobalSettingVarName: String,
+            routeWithoutGlobalSettingVarName: String
+        ) -> String {
+            let label = parameterLabel.text == "_" ? "" : "\(parameterLabel): "
+            let tryKeyword = willThrows ? "try " : ""
+            return if let confirmedUseGlobalSetting = confirmedUseGlobalSetting {
+                "\(tryKeyword)self.\(name)(\(label)\(confirmedUseGlobalSetting ? routeWithGlobalSettingVarName : routeWithoutGlobalSettingVarName))"
+            } else {
+                "\(tryKeyword)self.\(name)(\(label)\(useGlobalSetting))"
+            }
+        }
+        
     }
     
     

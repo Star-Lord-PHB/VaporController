@@ -72,6 +72,16 @@ struct HHH {
         routes.on(.ACL, "builder", "with", "global", use: { _ in HTTPStatus.ok })
     }
     
+    @OPTIONS(path: "options", "endPoint")
+    func optionsEndPoint(name: String, age: Int) async throws -> HTTPStatus {
+        return .ok
+    }
+    
+    @PATCH(path: "patch", "endPoint")
+    func patchEndPoint(name: String, age: Int) async throws -> HTTPStatus {
+        return .ok
+    }
+    
 }
 
 

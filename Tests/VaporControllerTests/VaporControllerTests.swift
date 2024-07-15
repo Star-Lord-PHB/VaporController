@@ -10,7 +10,9 @@ import VaporControllerMacros
 
 let testMacros: [String: Macro.Type] = [
     "EndPoint": EndPointMacro.self,
-    "Controller": ControllerMacro.self
+    "Controller": ControllerMacro.self,
+    "CustomEndPoint": CustomEndPointMacro.self,
+    "PATCH": EndPointMacro.PATCHMacro.self
 ]
 #endif
 
@@ -22,8 +24,8 @@ final class VaporControllerTests: XCTestCase {
             """
             @Controller
             struct Test {
-                @EndPoint(path: "endpoints", "hello", ":name")
-                func endPoint5(userName: String, @QueryParam(name: "pass") password: String) -> HTTPStatus {
+                @PATCH(path: "patch", "endPoint")
+                func patchEndPoint(name: String, age: Int) async throws -> HTTPStatus {
                     return .ok
                 }
             }

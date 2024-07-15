@@ -17,11 +17,22 @@ import Foundation
 public struct CustomEndPointMacro: MarkerMacro {
     
     struct CustomEndPointSpec {
+        
         let name: TokenSyntax
         let method: ExprSyntax
         let path: [ExprSyntax]
         let middleware: [ExprSyntax]
         let parameterLabel: TokenSyntax
+        
+        func useHandlerStr(routeVarName: String) -> String {
+            let pathComponentStrs = path.map({ $0.trimmedDescription })
+            let middlewareStrs = middleware.map({ $0.trimmedDescription })
+            let groupMiddlewareStr = middlewareStrs.isEmpty ? "" : ".grouped(\(middlewareStrs.joined(separator: ",")))\n\t"
+            let label = parameterLabel
+            return "\(routeVarName)\(groupMiddlewareStr)"
+            + ".on(\(method), \(pathComponentStrs.joined(separator: ",")), use: self.\(name)(\(label):))"
+        }
+        
     }
     
     

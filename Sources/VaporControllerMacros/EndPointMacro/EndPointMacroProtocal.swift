@@ -1,8 +1,8 @@
 //
-//  EndPointMacro.swift
-//  
+//  EndPointMacroProtocal.swift
+//  VaporController
 //
-//  Created by Star_Lord_PHB on 2024/7/3.
+//  Created by Star_Lord_PHB on 2024/7/14.
 //
 
 import SwiftCompilerPlugin
@@ -13,24 +13,26 @@ import SwiftDiagnostics
 import Foundation
 
 
+protocol EndPointMacroProtocal: MarkerMacro {
+    
+    static var macroParameterParseRules: [ParameterListParsingRule] { get }
+    
+    static func extractMacroParamters(
+        parameters: [[LabeledExprSyntax]],
+        declaration: FunctionDeclSyntax,
+        in context: some SwiftSyntaxMacros.MacroExpansionContext
+    ) throws -> MacroParam?
+    
+    static func generateHandlerDeclaration(
+        from declaration: FunctionDeclSyntax,
+        in context: some SwiftSyntaxMacros.MacroExpansionContext
+    ) throws -> (name: TokenSyntax, decl: [SwiftSyntax.DeclSyntax])?
+    
+}
 
-public struct EndPointMacro: MarkerMacro {
-    
-    struct EndPointSpec {
-        let handlerFunctionDecl: [SwiftSyntax.DeclSyntax]
-        let name: TokenSyntax
-        let method: ExprSyntax
-        let path: [ExprSyntax]
-        let middleware: [ExprSyntax]
-    }
-    
-    
-    static let macroParameterParseRules: [ParameterListParsingRule] = [
-        .labeled("method", canIgnore: true),
-        .labeledVarArg("path", canIgnore: true),
-        .labeledVarArg("middleware", canIgnore: true)
-    ]
-    
+
+
+extension EndPointMacroProtocal {
     
     static func internalExpansion(
         of node: SwiftSyntax.AttributeSyntax,
@@ -38,20 +40,44 @@ public struct EndPointMacro: MarkerMacro {
         in context: some SwiftSyntaxMacros.MacroExpansionContext
     ) throws -> EndPointSpec? {
         
-        guard 
+        guard
             let declaration = declaration.as(FunctionDeclSyntax.self),
-            !declaration.modifiers.contains(where: { $0.name.trimmed.text == "static" })
+            let macroParameters = parseMacroParams(from: node, with: macroParameterParseRules, in: context)
         else { return nil }
-        let signature = declaration.signature
         
-        let macroParameters: [[LabeledExprSyntax]]
-        do {
-            macroParameters = try node.arguments?
-                .grouped(with: macroParameterParseRules) ?? .init(repeating: [], count: macroParameterParseRules.count)
-        } catch {
-            context.diagnose(.init(node: node, message: error))
-            return nil 
+        guard let param = try extractMacroParamters(
+            parameters: macroParameters,
+            declaration: declaration,
+            in: context
+        ) else {
+            return nil
         }
+        
+        guard
+            let (handlerName, handlerDeclaration) = try generateHandlerDeclaration(from: declaration, in: context)
+        else {
+            context.diagnose(.init(node: node, message: EndPointParseError.unknown))
+            return nil
+        }
+        
+        return .init(
+            handlerFunctionDecl: handlerDeclaration,
+            name: handlerName,
+            method: param.method,
+            path: param.path,
+            middleware: param.middleware
+        )
+        
+    }
+    
+    
+    static func generateHandlerDeclaration(
+        from declaration: FunctionDeclSyntax,
+        in context: some SwiftSyntaxMacros.MacroExpansionContext
+    ) throws -> (name: TokenSyntax, decl: [SwiftSyntax.DeclSyntax])? {
+        
+        let signature = declaration.signature
+        let name = declaration.name
         
         let returnArrow = signature.returnClause?.arrow.trimmed ?? ""
         let returnType = signature.returnClause?.type.trimmed ?? ""
@@ -59,28 +85,17 @@ public struct EndPointMacro: MarkerMacro {
         let awaitKeyword = (signature.effectSpecifiers?.asyncSpecifier != nil ? "await " : "") as TokenSyntax
         let tryKeyword = (signature.effectSpecifiers?.throwsClause != nil ? "try " : "") as TokenSyntax
         
-        let method = macroParameters[0].first?.expression ?? ExprSyntax(MemberAccessExprSyntax(name: "GET"))
-        
-        let path = if !macroParameters[1].isEmpty {
-            macroParameters[1].map { $0.expression }
-        } else {
-            [ExprSyntax(StringLiteralExprSyntax(content: declaration.name.trimmed.text))]
-        }
-        
-        let middleware = macroParameters[2].map { $0.expression }
-        
         let parameterList = signature.parameterClause.parameters
+        let passArgumentsOperations = parsePassParametersOperations(from: parameterList)
         
         let extractParametersOperations = parameterList.compactMap { parseExtractParametersOperation(from: $0, in: context) }
         guard extractParametersOperations.count == parameterList.count else {
             return nil
         }
         
-        let passArgumentsOperations = parsePassParametersOperations(from: parameterList)
+        let handlerName = context.makeUniqueName(name.trimmed.text)
         
-        let handlerName = context.makeUniqueName(declaration.name.text)
-        
-        let handlerDeclaration: [SwiftSyntax.DeclSyntax] = [
+        let decl: [SwiftSyntax.DeclSyntax] = [
             """
             @Sendable
             func \(handlerName)(req: Request) \(asyncKeyword) throws \(returnArrow) \(returnType) {
@@ -90,13 +105,24 @@ public struct EndPointMacro: MarkerMacro {
             """
         ]
         
-        return .init(
-            handlerFunctionDecl: handlerDeclaration,
-            name: handlerName,
-            method: method,
-            path: path,
-            middleware: middleware
-        )
+        return (handlerName, decl)
+        
+    }
+    
+    
+    static func parseMacroParams(
+        from node: AttributeSyntax,
+        with rules: [ParameterListParsingRule],
+        in context: some SwiftSyntaxMacros.MacroExpansionContext
+    ) -> [[LabeledExprSyntax]]? {
+        
+        do {
+            return try node.arguments?.grouped(with: rules)
+            ?? .init(repeating: [], count: rules.count)
+        } catch {
+            context.diagnose(.init(node: node, message: error))
+            return nil
+        }
         
     }
     
@@ -111,14 +137,14 @@ public struct EndPointMacro: MarkerMacro {
             let declaration = declaration.as(FunctionDeclSyntax.self),
             !declaration.modifiers.contains(where: { $0.name.trimmed.text == "static" })
         else {
-            context.diagnose(.init(node: declaration, message: ParseError.attachTargetError))
+            context.diagnose(.init(node: declaration, message: EndPointParseError.attachTargetError))
             return []
         }
         return []
     }
     
     
-    private static func parseExtractParametersOperation(
+    static func parseExtractParametersOperation(
         from parameter: FunctionParameterSyntax,
         in context: some SwiftSyntaxMacros.MacroExpansionContext
     ) -> String? {
@@ -182,7 +208,7 @@ public struct EndPointMacro: MarkerMacro {
     }
     
     
-    private static func parsePassParametersOperations(from parameterList: FunctionParameterListSyntax) -> [String] {
+    static func parsePassParametersOperations(from parameterList: FunctionParameterListSyntax) -> [String] {
         
         parameterList.map { parameter in
             return if let argName = parameter.secondName?.trimmed, parameter.firstName.trimmed.text != "_" {
@@ -193,99 +219,6 @@ public struct EndPointMacro: MarkerMacro {
                 "\(parameter.firstName.trimmed): \(parameter.firstName.trimmed)"
             }
         }
-        
-    }
-    
-}
-
-
-
-extension EndPointMacro {
-    
-    enum EndPointParameterType {
-        
-        case pathParam(name: ExprSyntax)
-        case requestBody
-        case queryParam(name: ExprSyntax)
-        case queryContent
-        case authContent
-        case requestKeyPath(keyPath: ExprSyntax)
-        case req(keyPath: ExprSyntax)
-        
-        private static let allCasesStr: Set<String> = [
-            "PathParam", "RequestBody", "QueryParam", "QueryContent", "AuthContent", "RequestKeyPath", "Req"
-        ]
-        
-        init(from parameter: FunctionParameterSyntax) throws(ParseError) {
-            
-            let attributes = parameter.attributes.grouped()
-            
-            let count = attributes.keys.count(where: { Self.allCasesStr.contains($0) })
-            guard count <= 1 else { throw .multipleRequestParameterTypeDeclaration }
-            
-            let attrs = attributes.first(where: { Self.allCasesStr.contains($0.key) })?.value
-            guard attrs == nil || attrs?.count == 1 else {
-                throw .multipleRequestParameterTypeDeclaration
-            }
-            
-            let attr = attrs?.first
-            var defaultName: ExprSyntax {
-                .init(StringLiteralExprSyntax(content: (parameter.secondName ?? parameter.firstName).text))
-            }
-            var name: ExprSyntax { attr?.arguments?.grouped()["name"]?.first?.expression ?? defaultName }
-            
-            var defaultKeyPath: ExprSyntax {
-                .init(KeyPathExprSyntax(components: [.init(period: ".", component: .init(.init(declName: .init(baseName: "self"))))]))
-            }
-            var keyPath: ExprSyntax { attr?.arguments?.grouped()[nil]?.first?.expression ?? defaultKeyPath }
-            
-            self = switch attr?.attributeName.trimmedDescription {
-                case "PathParam": .pathParam(name: name)
-                case "RequestBody": .requestBody
-                case "QueryParam": .queryParam(name: name)
-                case "QueryContent": .queryContent
-                case "AuthContent": .authContent
-                case "RequestKeyPath": .requestKeyPath(keyPath: keyPath)
-                case "Req": .req(keyPath: keyPath)
-                default: .pathParam(name: defaultName)
-            }
-            
-        }
-        
-    }
-    
-}
-
-
-
-extension EndPointMacro {
-    
-    enum ParseError: LocalizedError, Identifiable, DiagnosticMessage {
-        
-        case attachTargetError
-        case multipleRequestParameterTypeDeclaration
-        
-        var id: String {
-            switch self {
-                case .multipleRequestParameterTypeDeclaration: "MultipleRequestParameterTypeDeclaration"
-                case .attachTargetError: "AttachTargetError"
-            }
-        }
-        
-        var message: String {
-            switch self {
-                case .multipleRequestParameterTypeDeclaration:
-                    "Parameter for request should have only one type"
-                case .attachTargetError:
-                    "EndPoint macro can only be attached to member functions"
-            }
-        }
-        
-        var diagnosticID: SwiftDiagnostics.MessageID { .init(domain: "EndPointMacroError", id: id) }
-        
-        var severity: SwiftDiagnostics.DiagnosticSeverity { .error }
-        
-        var errorDescription: String? { message }
         
     }
     

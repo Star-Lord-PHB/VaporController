@@ -17,7 +17,7 @@ struct HHH {
     }
     
     @EndPoint(method: getMethod(), middleware: UserAuthenticator(), User.guardMiddleware())
-    func endPoint3(@RequestBody user: User) throws -> HTTPStatus {
+    func endPoint3(@RequestBody user: User, @ReqContent book: Book?) throws -> HTTPStatus {
         return .ok
     }
     
@@ -28,12 +28,13 @@ struct HHH {
     
     @EndPoint(path: "endpoints", "hello", ":name", body: .stream)
     func endPoint5(
-        @QueryContent userName: String,
+        @QueryContent userName: String?,
         @QueryParam(name: "pass") password: String,
         @QueryParam age: Int = 0,
         @QueryParam description: String?,
         @AuthContent user: User = .init(name: "", age: 0),
         @RequestKeyPath(\.logger) logger: Logger,
+        @ReqURL url: URI,
         @Req req: Request
     ) async throws -> HTTPStatus {
         return .ok
@@ -133,6 +134,11 @@ struct User: Content, Authenticatable {
     let age: Int
 }
 
+struct Book: Content {
+    let name: String
+    let authro: String
+}
+
 
 struct UserAuthenticator: AsyncBasicAuthenticator {
     func authenticate(basic: Vapor.BasicAuthorization, for request: Vapor.Request) async throws {
@@ -144,5 +150,6 @@ struct UserAuthenticator: AsyncBasicAuthenticator {
 func test() async throws {
     let app = try await Application.make(Environment.detect())
     try app.register(collection: HHH())
+    let request = Request(application: app, on: app.eventLoopGroup.any())
 }
 

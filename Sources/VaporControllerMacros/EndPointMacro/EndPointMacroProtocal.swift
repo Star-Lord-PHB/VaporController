@@ -170,11 +170,11 @@ extension EndPointMacroProtocal {
                 } else {
                     "let \(varName) = try req.parameters.require(\(requestParamName), as: \(type).self)"
                 }
-            case .requestBody:
+            case .requestBody, .reqContent:
                 if let defaultValue = parameter.defaultValue {
-                    "let \(varName) = (try? req.content.decode(\(type.self))) ?? \(defaultValue)"
+                    "let \(varName) = (try? req.content.decode(\(type).self)) ?? \(defaultValue)"
                 } else if parameter.type.is(OptionalTypeSyntax.self) {
-                    "let \(varName) = try? req.content.decode(\(type.self))"
+                    "let \(varName) = try? req.content.decode(\(type).self)"
                 } else {
                     "let \(varName) = try req.content.decode(\(type).self)"
                 }
@@ -204,6 +204,8 @@ extension EndPointMacroProtocal {
                 }
             case .requestKeyPath(let keyPath), .req(let keyPath):
                 "let \(varName) = req[keyPath: \(keyPath)]"
+            case .reqUrl:
+                "let \(varName) = req.url"
         }
         
     }

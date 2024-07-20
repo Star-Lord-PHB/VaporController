@@ -44,15 +44,17 @@ struct MacroParam {
 enum EndPointParameterType {
     
     case pathParam(name: ExprSyntax)
-    case requestBody
+    case requestBody, reqContent
     case queryParam(name: ExprSyntax)
     case queryContent
     case authContent
     case requestKeyPath(keyPath: ExprSyntax)
     case req(keyPath: ExprSyntax)
+    case reqUrl
     
     private static let allCasesStr: Set<String> = [
-        "PathParam", "RequestBody", "QueryParam", "QueryContent", "AuthContent", "RequestKeyPath", "Req"
+        "PathParam", "RequestBody", "ReqContent", "QueryParam", "QueryContent", "AuthContent",
+        "RequestKeyPath", "Req", "ReqURL"
     ]
     
     init(from parameter: FunctionParameterSyntax) throws(EndPointParseError) {
@@ -81,11 +83,13 @@ enum EndPointParameterType {
         self = switch attr?.attributeName.trimmedDescription {
             case "PathParam": .pathParam(name: name)
             case "RequestBody": .requestBody
+            case "ReqContent": .reqContent
             case "QueryParam": .queryParam(name: name)
             case "QueryContent": .queryContent
             case "AuthContent": .authContent
             case "RequestKeyPath": .requestKeyPath(keyPath: keyPath)
             case "Req": .req(keyPath: keyPath)
+            case "ReqURL": .reqUrl
             default: .pathParam(name: defaultName)
         }
         

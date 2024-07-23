@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:VaporController}",
+            "name": "Debug VaporControllerClient",
+            "program": "${workspaceFolder:VaporController}/.build/debug/VaporControllerClient",
+            "preLaunchTask": "swift: Build Debug VaporControllerClient"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:VaporController}",
+            "name": "Release VaporControllerClient",
+            "program": "${workspaceFolder:VaporController}/.build/release/VaporControllerClient",
+            "preLaunchTask": "swift: Build Release VaporControllerClient"
+        }
+    ]
+}

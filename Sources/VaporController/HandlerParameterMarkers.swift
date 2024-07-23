@@ -5,7 +5,6 @@
 //  Created by Star_Lord_PHB on 2024/7/20.
 //
 
-import VaporControllerMacros
 import Vapor
 
 
@@ -34,7 +33,7 @@ import Vapor
 ///
 /// - Note: This property wrapper only works as a marker for macro expansion, it itself does
 /// nothing
-@available(*, deprecated, renamed: "RequestContent", message: "use @RequestContent instead")
+@available(*, deprecated, renamed: "ReqContent", message: "use @ReqContent instead")
 @propertyWrapper
 public struct RequestBody<T> {
     public var wrappedValue: T

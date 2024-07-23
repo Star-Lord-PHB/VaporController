@@ -17,7 +17,7 @@ struct HHH {
     }
     
     @EndPoint(method: getMethod(), middleware: UserAuthenticator(), User.guardMiddleware())
-    func endPoint3(@RequestBody user: User, @ReqContent book: Book?) throws -> HTTPStatus {
+    func endPoint3(@ReqContent user: User, @ReqContent book: Book?) throws -> HTTPStatus {
         return .ok
     }
     

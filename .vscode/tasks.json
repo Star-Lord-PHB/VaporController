@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "swift",
+			"args": [
+				"build",
+				"--build-tests",
+				"-Xswiftc",
+				"-diagnostic-style=llvm"
+			],
+			"env": {},
+			"cwd": "${workspaceFolder}/..",
+			"disableTaskQueue": true,
+			"showBuildStatus": "swiftStatus",
+			"problemMatcher": [],
+			"label": "swift: Build All",
+			"detail": "swift build --build-tests -Xswiftc -diagnostic-style=llvm"
+		}
+	]
+}

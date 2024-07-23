@@ -6,7 +6,6 @@
 //
 
 
-import VaporControllerMacros
 import Vapor
 
 
